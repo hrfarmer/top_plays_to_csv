@@ -79,6 +79,7 @@ for i, x in enumerate(range(0, int(settings["limit"]))):
         "user_country_code": user.country_code,
         "beatmap_id": score.beatmap_id,
         "last_updated": beatmap.beatmapset.last_updated.strftime("%Y-%m-%d %H:%M:%S"),
+        "ranked_date": beatmap.beatmapset.ranked_date.strftime("%Y-%m-%d %H:%M:%S"),
         "artist": beatmap.beatmapset.artist,
         "title": beatmap.beatmapset.title,
         "difficulty": beatmap.version,

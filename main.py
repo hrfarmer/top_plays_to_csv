@@ -1,5 +1,8 @@
 # TODO: Ensure all other modes work
 # TODO: Add a "fast" mode that removes the api call for mapper, also maybe the beatmap
+# TODO: Get leaderboard ranking of score through get_user_beatmap_score()
+# TODO: Look at threading/something else to be able to run concurrent maps
+#note: potential issue could be rate limit
 
 import os
 import osu
@@ -107,6 +110,7 @@ for i, x in enumerate(range(0, int(settings["limit"]))):
         "count_100": score.statistics.ok if score.statistics.ok else "0",
         "count_300": score.statistics.great if score.statistics.great else "0",
         "count_miss": score.statistics.miss if score.statistics.miss else "0",
+        "accuracy": score.accuracy,
         "mods": return_mods(score.mods) if score.mods else "None",
         "pp": score.pp,
         "replay": score.replay

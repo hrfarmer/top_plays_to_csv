@@ -1,3 +1,6 @@
+# TODO: Ensure all other modes work
+# TODO: Add a "fast" mode that removes the api call for mapper, also maybe the beatmap
+
 import os
 import osu
 import csv
@@ -78,6 +81,7 @@ for i, x in enumerate(range(0, int(settings["limit"]))):
         "user_id": user_id,
         "user_country_code": user.country_code,
         "beatmap_id": score.beatmap_id,
+        "beatmapset_id": beatmap.beatmapset_id,
         "last_updated": beatmap.beatmapset.last_updated.strftime("%Y-%m-%d %H:%M:%S"),
         "ranked_date": beatmap.beatmapset.ranked_date.strftime("%Y-%m-%d %H:%M:%S"),
         "artist": beatmap.beatmapset.artist,

@@ -1,0 +1,112 @@
+import os
+import osu
+import csv
+import time
+from dotenv import load_dotenv
+
+score_dictionary = {}
+available_modes = ["osu", "taiko", "fruits", "mania"]
+
+def calculate_time(length):
+    rounded_length = round(length)
+    minutes = rounded_length // 60
+    if rounded_length < 60:
+        if rounded_length < 10:
+            return f"0:0{rounded_length}"
+        return f"0:{rounded_length}"
+    else:
+        seconds = rounded_length - (minutes * 60)
+        if seconds < 10:
+            return f"{minutes}:0{seconds}"
+        return f"{minutes}:{seconds}"
+
+load_dotenv()
+client_id = os.getenv('client_id')
+client_secret = os.getenv('client_secret')
+redirect_url = os.getenv('redirect_url')
+
+client = osu.Client.from_client_credentials(client_id, client_secret, redirect_url)
+
+user_id = input("Please enter the id of the user you want to generate for: ")
+mode = input("What mode would you like to generate for? (Mode names are osu, taiko, fruits, mania, or type nothing for osu): ")
+if mode not in available_modes:
+    print("This mode is not valid.")
+    exit()
+elif mode == "":
+    mode = "osu"
+
+try:
+    user = client.get_user(user_id)
+    print(f"Getting {user.username}'s top plays")
+except:
+    print("This user doesn't exist")
+    exit()
+
+
+def return_mods(mods):
+    string = ""
+    for x in mods:
+        string += x.mod.value
+    
+    return string
+
+scores = client.get_user_scores(user_id, "best", mode=mode, limit=100)
+
+start_time = time.time()
+
+for i, x in enumerate(range(0, 100)):
+    print(f"Getting top play: {x+1}")
+
+    try:
+        score = scores[x]
+    except:
+        break
+
+    beatmap = client.get_beatmap(score.beatmap_id)
+    mapper = client.get_user(beatmap.user_id)
+
+    dict = {
+        "score_number": x+1,
+        "user_id": user_id,
+        "user_country_code": user.country_code,
+        "beatmap_id": score.beatmap_id,
+        "last_updated": beatmap.beatmapset.last_updated.strftime("%Y-%m-%d %H:%M:%S"),
+        "artist": beatmap.beatmapset.artist,
+        "title": beatmap.beatmapset.title,
+        "difficulty": beatmap.version,
+        "bpm": beatmap.bpm,
+        "od": beatmap.accuracy,
+        "ar": beatmap.ar,
+        "cs": beatmap.cs,
+        "hp": beatmap.drain,
+        "length": calculate_time(beatmap.total_length),
+        "drain_length": calculate_time(beatmap.hit_length),
+        "beatmap_mode": beatmap.mode.value,
+        "mapper": mapper.username,
+        "mapper_user_id": mapper.id,
+        "mapper_country_code": mapper.country_code,
+        "score_id": score.id,
+        "time": score.ended_at.strftime("%Y-%m-%d %H:%M:%S"),
+        "score": score.total_score,
+        "max_combo": score.max_combo,
+        "rank": score.rank.value,
+        "count_50": score.statistics.meh if score.statistics.meh else "0",
+        "count_100": score.statistics.ok if score.statistics.ok else "0",
+        "count_300": score.statistics.great if score.statistics.great else "0",
+        "count_miss": score.statistics.miss if score.statistics.miss else "0",
+        "mods": return_mods(score.mods) if score.mods else "None",
+        "pp": score.pp,
+        "replay": score.replay
+    }
+    score_dictionary[x+1] = dict
+
+end_time = time.time()
+print(f"The script took {end_time - start_time} seconds to run")
+
+with open(f"{user_id}_top_plays.csv", mode="w") as csv_file:
+    fieldnames = list(score_dictionary[1].keys())
+    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+    writer.writeheader()
+
+    for x in score_dictionary:
+        writer.writerow(score_dictionary[x])

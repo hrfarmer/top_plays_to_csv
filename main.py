@@ -68,7 +68,10 @@ for i, x in enumerate(range(0, int(settings["limit"]))):
         break
 
     beatmap = client.get_beatmap(score.beatmap_id)
-    mapper = client.get_user(beatmap.user_id)
+    try:
+        mapper = client.get_user(beatmap.user_id)
+    except:
+        mapper = None
 
     dict = {
         "score_number": x+1,
@@ -87,9 +90,9 @@ for i, x in enumerate(range(0, int(settings["limit"]))):
         "length": calculate_time(beatmap.total_length),
         "drain_length": calculate_time(beatmap.hit_length),
         "beatmap_mode": beatmap.mode.value,
-        "mapper": mapper.username,
-        "mapper_user_id": mapper.id,
-        "mapper_country_code": mapper.country_code,
+        "mapper": mapper.username if mapper != None else "Restricted",
+        "mapper_user_id": mapper.id if mapper != None else "Restricted",
+        "mapper_country_code": mapper.country_code if mapper != None else "Restricted",
         "score_id": score.id,
         "time": score.ended_at.strftime("%Y-%m-%d %H:%M:%S"),
         "score": score.total_score,

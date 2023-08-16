@@ -2,10 +2,19 @@ import os
 import osu
 import csv
 import time
+import json
 from dotenv import load_dotenv
 
 score_dictionary = {}
 available_modes = ["osu", "taiko", "fruits", "mania"]
+
+load_dotenv()
+client_id = os.getenv('client_id')
+client_secret = os.getenv('client_secret')
+redirect_url = os.getenv('redirect_url')
+
+with open("settings.json", "r") as f:
+    settings = json.load(f)
 
 def calculate_time(length):
     rounded_length = round(length)
@@ -20,15 +29,18 @@ def calculate_time(length):
             return f"{minutes}:0{seconds}"
         return f"{minutes}:{seconds}"
 
-load_dotenv()
-client_id = os.getenv('client_id')
-client_secret = os.getenv('client_secret')
-redirect_url = os.getenv('redirect_url')
+def return_mods(mods):
+    string = ""
+    for x in mods:
+        string += x.mod.value
+    
+    return string
 
 client = osu.Client.from_client_credentials(client_id, client_secret, redirect_url)
 
-user_id = input("Please enter the id of the user you want to generate for: ")
-mode = input("What mode would you like to generate for? (Mode names are osu, taiko, fruits, mania, or type nothing for osu): ")
+user_id = settings["user_id"]
+mode = settings["mode"]
+
 if mode not in available_modes:
     print("This mode is not valid.")
     exit()
@@ -43,18 +55,11 @@ except:
     exit()
 
 
-def return_mods(mods):
-    string = ""
-    for x in mods:
-        string += x.mod.value
-    
-    return string
-
 scores = client.get_user_scores(user_id, "best", mode=mode, limit=100)
 
 start_time = time.time()
 
-for i, x in enumerate(range(0, 100)):
+for i, x in enumerate(range(0, int(settings["limit"]))):
     print(f"Getting top play: {x+1}")
 
     try:
@@ -103,10 +108,24 @@ for i, x in enumerate(range(0, 100)):
 end_time = time.time()
 print(f"The script took {end_time - start_time} seconds to run")
 
-with open(f"{user_id}_top_plays.csv", mode="w") as csv_file:
-    fieldnames = list(score_dictionary[1].keys())
-    writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
-    writer.writeheader()
+if settings["output"] == "csv":
+    with open(f"{user_id}_top_plays.csv", mode="w") as csv_file:
+        fieldnames = list(score_dictionary[1].keys())
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
 
-    for x in score_dictionary:
-        writer.writerow(score_dictionary[x])
+        for x in score_dictionary:
+            writer.writerow(score_dictionary[x])
+elif settings["output"] == "json":
+    with open(f"{user_id}_top_plays.json", "w") as json_file:
+        f = json.dumps(score_dictionary)
+        json_file.write(f)
+else:
+    print("Output setting invalid, defaulting to csv.")
+    with open(f"{user_id}_top_plays.csv", mode="w") as csv_file:
+        fieldnames = list(score_dictionary[1].keys())
+        writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for x in score_dictionary:
+            writer.writerow(score_dictionary[x])

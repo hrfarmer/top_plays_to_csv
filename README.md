@@ -1,6 +1,8 @@
 # top_plays_to_csv
 Simple python script that generates a csv/json file of an osu! user's top plays
 
+(Note: while you can input other modes, I haven't tested with other modes just yet, but I will ensure they work properly soon)
+
 
 ## To setup:
 

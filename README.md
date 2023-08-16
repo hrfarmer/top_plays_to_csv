@@ -1,4 +1,6 @@
 # top_plays_to_csv
+Simple python script that generates a csv/json file of an osu! user's top plays
+
 
 ## To setup:
 

@@ -1,18 +1,18 @@
 # TODO: Ensure all other modes work
 # TODO: Add a "fast" mode that removes the api call for mapper, also maybe the beatmap
 # TODO: Get leaderboard ranking of score through get_user_beatmap_score()
-# TODO: Look at threading/something else to be able to run concurrent maps
-#note: potential issue could be rate limit
 
 import os
 import osu
 import csv
 import time
 import json
+import threading
 from dotenv import load_dotenv
 
 score_dictionary = {}
 available_modes = ["osu", "taiko", "fruits", "mania"]
+threads = []
 
 load_dotenv()
 client_id = os.getenv('client_id')
@@ -42,7 +42,7 @@ def return_mods(mods):
     
     return string
 
-client = osu.Client.from_client_credentials(client_id, client_secret, redirect_url)
+client = osu.Client.from_client_credentials(client_id, client_secret, redirect_url, limit_per_minute=300, request_wait_time=0.2)
 
 user_id = settings["user_id"]
 mode = settings["mode"]
@@ -65,15 +65,16 @@ scores = client.get_user_scores(user_id, "best", mode=mode, limit=100)
 
 start_time = time.time()
 
-for i, x in enumerate(range(0, int(settings["limit"]))):
+def generate_top_play(x):
     print(f"Getting top play: {x+1}")
 
     try:
         score = scores[x]
     except:
-        break
+        return
 
     beatmap = client.get_beatmap(score.beatmap_id)
+    leaderboard_spot = client.get_user_beatmap_score(score.beatmap_id, user_id, mode=mode)
     try:
         mapper = client.get_user(beatmap.user_id)
     except:
@@ -106,6 +107,7 @@ for i, x in enumerate(range(0, int(settings["limit"]))):
         "score": score.total_score,
         "max_combo": score.max_combo,
         "rank": score.rank.value,
+        "leaderboard_position": f"#{leaderboard_spot.position}",
         "count_50": score.statistics.meh if score.statistics.meh else "0",
         "count_100": score.statistics.ok if score.statistics.ok else "0",
         "count_300": score.statistics.great if score.statistics.great else "0",
@@ -117,27 +119,33 @@ for i, x in enumerate(range(0, int(settings["limit"]))):
     }
     score_dictionary[x+1] = dict
 
+for i, x in enumerate(range(0, int(settings["limit"]))):
+    generate_top_play(x)
+
 end_time = time.time()
 print(f"The script took {end_time - start_time} seconds to run")
 
+sorted_keys = sorted(score_dictionary.keys())
+sorted_score_dictionary = {key: score_dictionary[key] for key in sorted_keys}
+
 if settings["output"] == "csv":
     with open(f"{user_id}_top_plays.csv", mode="w") as csv_file:
-        fieldnames = list(score_dictionary[1].keys())
+        fieldnames = list(sorted_score_dictionary[1].keys())
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
-        for x in score_dictionary:
-            writer.writerow(score_dictionary[x])
+        for x in sorted_score_dictionary:
+            writer.writerow(sorted_score_dictionary[x])
 elif settings["output"] == "json":
     with open(f"{user_id}_top_plays.json", "w") as json_file:
-        f = json.dumps(score_dictionary)
+        f = json.dumps(sorted_score_dictionary)
         json_file.write(f)
 else:
     print("Output setting invalid, defaulting to csv.")
     with open(f"{user_id}_top_plays.csv", mode="w") as csv_file:
-        fieldnames = list(score_dictionary[1].keys())
+        fieldnames = list(sorted_score_dictionary[1].keys())
         writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
         writer.writeheader()
 
-        for x in score_dictionary:
-            writer.writerow(score_dictionary[x])
+        for x in sorted_score_dictionary:
+            writer.writerow(sorted_score_dictionary[x])

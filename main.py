@@ -1,13 +1,11 @@
 # TODO: Ensure all other modes work
 # TODO: Add a "fast" mode that removes the api call for mapper, also maybe the beatmap
-# TODO: Get leaderboard ranking of score through get_user_beatmap_score()
 
 import os
 import osu
 import csv
 import time
 import json
-import threading
 from dotenv import load_dotenv
 
 score_dictionary = {}
@@ -42,7 +40,7 @@ def return_mods(mods):
     
     return string
 
-client = osu.Client.from_client_credentials(client_id, client_secret, redirect_url, limit_per_minute=300, request_wait_time=0.2)
+client = osu.Client.from_client_credentials(client_id, client_secret, redirect_url, limit_per_minute=120, request_wait_time=0.2)
 
 user_id = settings["user_id"]
 mode = settings["mode"]
